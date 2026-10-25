@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { normalizeStudentNo } from '../lib/studentNo'
 import GradeCard from '../components/GradeCard'
@@ -110,6 +111,15 @@ export default function StudentLookup() {
             </section>
           )}
         </div>
+
+        <footer className="mt-12 border-t border-[#D5DBE5] pt-4 text-right">
+          <Link
+            to="/admin/login"
+            className="text-sm text-[#5B6577] underline hover:text-[#0E6B63]"
+          >
+            Admin sign in
+          </Link>
+        </footer>
       </main>
     </div>
   )
