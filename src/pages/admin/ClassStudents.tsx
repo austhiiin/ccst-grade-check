@@ -16,6 +16,65 @@ interface StudentRow {
 }
 
 type StudentDraft = Omit<StudentRow, 'id'>
+type SortKey = keyof Pick<
+  StudentRow,
+  'student_no' | 'full_name' | 'program_sec' | 'midterm' | 'final' | 'remarks'
+>
+type SortDirection = 'asc' | 'desc'
+
+function compareStudents(a: StudentRow, b: StudentRow, key: SortKey): number {
+  const left = a[key]
+  const right = b[key]
+  const leftEmpty = left === null || left === ''
+  const rightEmpty = right === null || right === ''
+
+  if (leftEmpty || rightEmpty) {
+    if (leftEmpty && rightEmpty) return 0
+    return leftEmpty ? 1 : -1
+  }
+
+  if (
+    (key === 'midterm' || key === 'final') &&
+    Number.isFinite(Number(left)) &&
+    Number.isFinite(Number(right))
+  ) {
+    return Number(left) - Number(right)
+  }
+
+  return left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
+}
+
+function SortHeader({
+  label,
+  column,
+  activeColumn,
+  direction,
+  onSort,
+}: {
+  label: string
+  column: SortKey
+  activeColumn: SortKey
+  direction: SortDirection
+  onSort: (column: SortKey) => void
+}) {
+  const active = activeColumn === column
+
+  return (
+    <th
+      aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className="px-3 py-3 font-medium"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex items-center gap-1 hover:text-[#0E6B63]"
+      >
+        {label}
+        <span aria-hidden="true">{active ? (direction === 'asc' ? '↑' : '↓') : '↕'}</span>
+      </button>
+    </th>
+  )
+}
 
 function toDraft(student: StudentRow): StudentDraft {
   return {
@@ -42,6 +101,8 @@ export default function ClassStudents() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sortColumn, setSortColumn] = useState<SortKey>('student_no')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   useEffect(() => {
     let active = true
@@ -92,6 +153,15 @@ export default function ClassStudents() {
     setEditingId(student.id)
   }
 
+  function sortBy(column: SortKey) {
+    if (column === sortColumn) {
+      setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))
+      return
+    }
+    setSortColumn(column)
+    setSortDirection('asc')
+  }
+
   async function saveStudent(student: StudentRow) {
     const draft = drafts[student.id]
     if (!draft) return
@@ -138,6 +208,13 @@ export default function ClassStudents() {
 
   const fieldClass =
     'w-full rounded border border-[#B8C1D0] bg-white px-2 py-1.5 outline-none focus-visible:border-[#0E6B63] focus-visible:ring-2 focus-visible:ring-[#0E6B63]/30'
+  const sortedStudents = [...students].sort((a, b) => {
+    const comparison = compareStudents(a, b, sortColumn)
+    if (comparison === 0) return 0
+    if (a[sortColumn] === null || a[sortColumn] === '') return 1
+    if (b[sortColumn] === null || b[sortColumn] === '') return -1
+    return sortDirection === 'asc' ? comparison : -comparison
+  })
 
   return (
     <div className="min-h-screen bg-[#F4F6F9] text-[#162033]">
@@ -170,17 +247,53 @@ export default function ClassStudents() {
             <table className="w-full min-w-[1050px] text-left text-sm">
               <thead className="border-b border-[#D5DBE5] text-[#5B6577]">
                 <tr>
-                  <th className="px-3 py-3 font-medium">Student no.</th>
-                  <th className="px-3 py-3 font-medium">Name</th>
-                  <th className="px-3 py-3 font-medium">Program / section</th>
-                  <th className="px-3 py-3 font-medium">Midterm</th>
-                  <th className="px-3 py-3 font-medium">Final</th>
-                  <th className="px-3 py-3 font-medium">Remarks</th>
+                  <SortHeader
+                    label="Student no."
+                    column="student_no"
+                    activeColumn={sortColumn}
+                    direction={sortDirection}
+                    onSort={sortBy}
+                  />
+                  <SortHeader
+                    label="Name"
+                    column="full_name"
+                    activeColumn={sortColumn}
+                    direction={sortDirection}
+                    onSort={sortBy}
+                  />
+                  <SortHeader
+                    label="Program / section"
+                    column="program_sec"
+                    activeColumn={sortColumn}
+                    direction={sortDirection}
+                    onSort={sortBy}
+                  />
+                  <SortHeader
+                    label="Midterm"
+                    column="midterm"
+                    activeColumn={sortColumn}
+                    direction={sortDirection}
+                    onSort={sortBy}
+                  />
+                  <SortHeader
+                    label="Final"
+                    column="final"
+                    activeColumn={sortColumn}
+                    direction={sortDirection}
+                    onSort={sortBy}
+                  />
+                  <SortHeader
+                    label="Remarks"
+                    column="remarks"
+                    activeColumn={sortColumn}
+                    direction={sortDirection}
+                    onSort={sortBy}
+                  />
                   <th className="px-3 py-3 font-medium">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {students.map((student) => {
+                {sortedStudents.map((student) => {
                   const editing = editingId === student.id
                   const draft = drafts[student.id]
 
