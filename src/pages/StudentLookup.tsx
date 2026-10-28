@@ -20,7 +20,7 @@ export default function StudentLookup() {
 
     if (digits.length !== 7) {
       setStatus('error')
-      setMessage('Enter your 7-digit student ID, for example 26-47798.')
+      setMessage('Enter your 7-digit student ID, for example 26-12345.')
       return
     }
 
@@ -59,7 +59,7 @@ export default function StudentLookup() {
               id="student-id"
               inputMode="numeric"
               autoComplete="off"
-              placeholder="26-47798"
+              placeholder="26-12345"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               aria-invalid={status === 'error'}
